@@ -15,10 +15,10 @@ class MqttSubscribeCommand extends Command
 
     public function handle()
     {
-        $server   = 'broker.emqx.io';  // Ganti broker jika beda
-        $port     = 1883;                 // Port MQTT
+        $server   = 'broker.emqx.io';
+        $port     = 1883;
         $clientId = 'dashboard-iot-' . uniqid();
-        $username = null;                 // Diisi kalau broker pakai auth
+        $username = null;
         $password = null;
 
         $mqtt = new MqttClient($server, $port, $clientId);
@@ -35,18 +35,30 @@ class MqttSubscribeCommand extends Command
 
         $this->info('Terhubung ke MQTT broker!');
 
-        // Subscribe ke topic
-        $mqtt->subscribe('iot/smartHome0oa8gdj/smartHome/access_status', function (string $topic, string $message) {
-            Log::info("Pesan MQTT diterima: [$topic] $message");
+        // Daftar topik dan jenis perangkat
+        $topics = [
+            'iot/smartHome0oa8gdj/smartHome/access_status' => 'smarthome',
+            'iot/smartCity84jgs90/smartCity' => 'smartcity',
+        ];
 
-            // Simpan ke database
-            MqttData::create([
-                'topic' => $topic,
-                'message' => $message,
-            ]);
-        }, 0);
+        foreach ($topics as $pattern => $deviceType) {
+            $mqtt->subscribe($pattern, function (string $topic, string $message) use ($deviceType) {
+                // Log ke file
+                Log::info("[$deviceType] Pesan MQTT diterima: [$topic] $message");
 
-        // Mulai loop listening
+                // Log ke terminal
+                echo "[$deviceType] Pesan MQTT diterima: [$topic] $message\n";
+
+                // Simpan ke database
+                MqttData::create([
+                    'topic' => $topic,
+                    'message' => $message,
+                    'device_type' => $deviceType,
+                ]);
+            }, 0);
+        }
+
+        // Jalankan loop untuk terus menerima pesan
         $mqtt->loop(true);
     }
 }

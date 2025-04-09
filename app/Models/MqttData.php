@@ -11,5 +11,6 @@ class MqttData extends Model
 
     protected $table = 'mqtt_data';
 
-    protected $fillable = ['topic', 'message'];
+    protected $fillable = ['topic', 'message', 'device_type'];
+
 }
