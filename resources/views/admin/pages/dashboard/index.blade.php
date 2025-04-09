@@ -8,7 +8,7 @@
 <div class="card shadow mb-4 mt-4">
     <div class="card-header py-3 d-flex justify-content-between">
         <h5 class="m-0 font-weight-bold text-primary">List Project</h5>
-        <a href="#" class="btn btn-success">Tambah Project</a>
+        <a href="{{ route('project.create') }}" class="btn btn-success">Tambah Project</a>
     </div>
     <div class="card-body">
         <div class="table-responsive">

@@ -13,8 +13,13 @@ class ProjectController extends Controller
     }
 
     public function detailCity($id)
-{
-    return view('admin.pages.project_detail1', ['id' => $id]);
-}
+    {
+        return view('admin.pages.project_detail1', ['id' => $id]);
+    }
 
+    // Method untuk menampilkan form tambah project
+    public function create()
+    {
+        return view('admin.pages.project_create');
+    }
 }
