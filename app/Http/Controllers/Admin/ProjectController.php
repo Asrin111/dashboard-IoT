@@ -11,4 +11,10 @@ class ProjectController extends Controller
     {
         return view('admin.pages.project_detail', ['id' => $id]);
     }
+
+    public function detailCity($id)
+{
+    return view('admin.pages.project_detail1', ['id' => $id]);
+}
+
 }
