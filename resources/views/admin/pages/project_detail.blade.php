@@ -2,21 +2,42 @@
 @section('title', 'Project Detail')
 @section('content')
 
-<h1 class="h3 mb-4 text-gray-800">Project Detail</h1>
+<h1 class="h3 mb-4 text-gray-800">Project Detail - Device: {{ $device->device_id }}</h1>
 
 <div class="card shadow mb-4">
     <div class="card-header py-3 d-flex justify-content-between">
-        <h5 class="m-0 font-weight-bold text-primary">Device Monitoring</h5>
+        <h5 class="m-0 font-weight-bold text-primary">
+            @if($device->tipe == 'DoorLock')
+            SmartHome - DoorLock
+            @elseif($device->tipe == 'Parking')
+            SmartCity - Parking
+            @else
+            Unknown Device
+            @endif
+        </h5>
     </div>
     <div class="card-body">
         <p><strong>Status:</strong> <span id="device-status" class="text-danger">Offline</span></p>
         <p><strong>Status Pintu Saat Ini:</strong> <span id="status-pintu-text">-</span></p>
 
         <hr>
+
+        <!-- Menampilkan data atau grafik yang sesuai berdasarkan tipe device -->
+        @if($device->tipe == 'DoorLock')
         <h5>Data Pintu</h5>
         <div class="chart-container" style="height: 400px;">
             <canvas id="dataChart"></canvas>
         </div>
+        <!-- Grafik atau data terkait smart home -->
+        @elseif($device->tipe == 'Parking')
+        <h5>Data Parkir</h5>
+        <div class="chart-container" style="height: 400px;">
+            <canvas id="dataChart"></canvas>
+        </div>
+        <!-- Grafik atau data terkait smart city -->
+        @else
+        <p>Tipe device tidak dikenali.</p>
+        @endif
     </div>
 </div>
 
@@ -25,14 +46,48 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    var ctx = document.getElementById('dataChart').getContext('2d');
+    const deviceId = "{{ $device->device_id }}";
+    const deviceType = "{{ $device->tipe }}";
 
-    var dataChart = new Chart(ctx, {
+    if (!deviceId || !deviceType) {
+        console.error('Device ID atau Tipe tidak valid!');
+        return;
+    }
+
+    const statusTextEl = document.getElementById('status-pintu-text');
+    const statusIndicatorEl = document.getElementById('device-status');
+
+    // Mapping label berdasarkan tipe device
+    const deviceConfig = {
+        DoorLock: {
+            label: 'Status Pintu (0 = Tertutup, 1 = Terbuka)',
+            onText: 'Terbuka',
+            offText: 'Tertutup',
+            match: msg => msg.includes("GRANTED")
+        },
+        Parking: {
+            label: 'Status Parkir (0 = Kosong, 1 = Terisi)',
+            onText: 'Terisi',
+            offText: 'Kosong',
+            match: msg => msg.includes("TERISI") || msg === "1"
+        }
+    };
+
+    const config = deviceConfig[deviceType] || {
+        label: 'Status Tidak Dikenal',
+        onText: 'Aktif',
+        offText: 'Nonaktif',
+        match: () => false
+    };
+
+    // Inisialisasi Chart.js
+    const ctx = document.getElementById('dataChart').getContext('2d');
+    const dataChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: [],
             datasets: [{
-                label: 'Status Pintu (0 = Tertutup, 1 = Terbuka)',
+                label: config.label,
                 borderColor: 'green',
                 backgroundColor: 'rgba(0,255,0,0.1)',
                 data: [],
@@ -47,9 +102,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     max: 1,
                     ticks: {
                         stepSize: 1,
-                        callback: function(value) {
-                            return value == 1 ? 'Terbuka' : 'Tertutup';
-                        }
+                        callback: value => value === 1 ? config.onText : config.offText
                     }
                 },
                 x: {
@@ -62,58 +115,47 @@ document.addEventListener("DOMContentLoaded", function() {
             plugins: {
                 tooltip: {
                     callbacks: {
-                        label: function(context) {
-                            return context.raw == 1 ? 'Terbuka' : 'Tertutup';
-                        }
+                        label: context => context.raw === 1 ? config.onText : config.offText
                     }
                 }
             }
         }
     });
 
+    // Inisialisasi koneksi MQTT
     const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
-
     let statusTimeout;
 
     client.on('connect', function() {
         console.log('Terhubung ke MQTT broker!');
+        const topic = `iot/${deviceId}`;
 
-        client.subscribe('iot/smartHome0oa8gdj/smartHome/access_status', function(err) {
-            if (!err) {
-                console.log(
-                'Subscribed ke topik: iot/smartHome0oa8gdj/smartHome/access_status');
-            } else {
+        client.subscribe(topic, function(err) {
+            if (err) {
                 console.error('Gagal subscribe:', err);
+            } else {
+                console.log('Subscribed ke topik:', topic);
             }
         });
     });
 
     client.on('message', function(topic, message) {
-        console.log('Pesan diterima:', topic, message.toString());
+        const msg = message.toString().toUpperCase();
+        console.log('Pesan diterima:', topic, msg);
 
-        // Set status online
-        document.getElementById('device-status').textContent = 'Online';
-        document.getElementById('device-status').classList.remove('text-danger');
-        document.getElementById('device-status').classList.add('text-success');
+        // Update status online
+        updateStatusIndicator(true);
 
-        // Reset timeout offline
+        // Reset offline timeout
         clearTimeout(statusTimeout);
-        statusTimeout = setTimeout(() => {
-            document.getElementById('device-status').textContent = 'Offline';
-            document.getElementById('device-status').classList.remove('text-success');
-            document.getElementById('device-status').classList.add('text-danger');
-        }, 5000);
+        statusTimeout = setTimeout(() => updateStatusIndicator(false), 5000);
 
-        // Konversi pesan string menjadi nilai status numerik
-        var msg = message.toString().toUpperCase();
-        var status = msg.includes("GRANTED") ? 1 : 0;
+        // Interpretasi status berdasarkan tipe device
+        const status = config.match(msg) ? 1 : 0;
+        statusTextEl.textContent = status === 1 ? config.onText : config.offText;
 
-        // Update teks status
-        document.getElementById('status-pintu-text').textContent = status === 1 ? 'Terbuka' :
-        'Tertutup';
-
-        // Tambahkan data ke grafik
-        var currentTime = new Date().toLocaleTimeString();
+        // Update grafik
+        const currentTime = new Date().toLocaleTimeString();
         dataChart.data.labels.push(currentTime);
         dataChart.data.datasets[0].data.push(status);
 
@@ -125,17 +167,18 @@ document.addEventListener("DOMContentLoaded", function() {
         dataChart.update();
     });
 
-    client.on('error', function(error) {
-        console.error('MQTT Error:', error);
-    });
+    client.on('error', error => console.error('MQTT Error:', error));
 
     client.on('close', function() {
         console.warn('MQTT connection closed');
-        document.getElementById('device-status').textContent = 'Offline';
-        document.getElementById('device-status').classList.remove('text-success');
-        document.getElementById('device-status').classList.add('text-danger');
+        updateStatusIndicator(false);
     });
+
+    function updateStatusIndicator(isOnline) {
+        statusIndicatorEl.textContent = isOnline ? 'Online' : 'Offline';
+        statusIndicatorEl.classList.toggle('text-success', isOnline);
+        statusIndicatorEl.classList.toggle('text-danger', !isOnline);
+    }
 });
 </script>
-
 @endsection

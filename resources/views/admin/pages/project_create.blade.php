@@ -6,34 +6,26 @@
 
 <div class="card shadow mb-4">
     <div class="card-body">
-        <form action="#" method="POST">
+        <form action="{{ route('project.store') }}" method="POST">
             @csrf
-            <div class="form-group">
-                <label for="name">Nama Project</label>
-                <input type="text" name="name" id="name" class="form-control" required placeholder="Contoh: SmartHome">
+
+            <div class="form-group mt-3">
+                <label for="device_id">ID Device</label>
+                <input type="text" name="device_id" id="device_id" class="form-control" required>
             </div>
 
             <div class="form-group mt-3">
-                <label for="topic">Topik MQTT</label>
-                <input type="text" name="topic" id="topic" class="form-control" required
-                    placeholder="Contoh: iot/smartHomexxxx/device">
-            </div>
-
-            <div class="form-group mt-3">
-                <label for="device_type">Tipe Project</label>
-                <select name="device_type" id="device_type" class="form-control" required>
-                    <option value="">-- Pilih Tipe Project --</option>
-                    <option value="smarthome">SmartHome</option>
-                    <option value="smartcity">SmartCity</option>
-                    <option value="smartagriculture">Smart Agriculture</option>
-                    <option value="smartparking">Smart Parking</option>
-                    <option value="smartoffice">Smart Office</option>
-                    <!-- Bisa ditambah tipe lainnya -->
+                <label for="tipe">Tipe Proyek</label>
+                <select name="tipe" id="tipe" class="form-control" required>
+                    <option value="">-- Pilih Tipe Proyek --</option>
+                    <option value="DoorLock">DoorLock</option>
+                    <option value="Parking">Parking</option>
+                    <option value="Plants">Plants</option>
                 </select>
             </div>
 
             <div class="form-group mt-4">
-                <button type="submit" class="btn btn-primary" disabled>🔒 Simpan (Coming Soon)</button>
+                <button type="submit" class="btn btn-primary"> Tambah Proyek </button>
                 <a href="{{ route('dashboard') }}" class="btn btn-secondary">Kembali</a>
             </div>
         </form>
