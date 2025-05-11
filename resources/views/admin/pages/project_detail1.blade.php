@@ -37,7 +37,7 @@
     </div>
     <div class="card-body">
         <div class="chart-container" style="height: 400px;">
-            <canvas id="dataChart"></canvas>
+            <canvas id="sensorChart"></canvas>
         </div>
     </div>
 </div>
@@ -47,9 +47,9 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    const ctx = document.getElementById('dataChart').getContext('2d');
+    const ctx = document.getElementById('sensorChart').getContext('2d');
 
-    const dataChart = new Chart(ctx, {
+    const sensorChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: [],
@@ -90,32 +90,35 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
+    const statusEl = document.getElementById('device-status');
+    const expectedTopic = `iot/zeta49kunix/status/Parking/{{ $device->device_id }}`;
     let statusTimeout;
 
     client.on('connect', () => {
-        console.log('Terhubung ke MQTT broker!');
-        client.subscribe('iot/smartCity84jgs90/smartCity', err => {
-            if (!err) {
-                console.log('Subscribed ke topik: iot/smartCity84jgs90/smartCity');
-            } else {
-                console.error('Gagal subscribe:', err);
-            }
-        });
+        client.subscribe(expectedTopic);
+        client.subscribe(`iot/zeta49kunix/Parking/{{ $device->device_id }}`);
+    });
+
+    client.on('close', () => {
+        console.log('Koneksi MQTT terputus');
+        if (statusEl) {
+            statusEl.textContent = 'Offline';
+            statusEl.classList.replace('text-success', 'text-danger');
+        }
     });
 
     client.on('message', (topic, message) => {
-        console.log('Pesan diterima:', topic, message.toString());
+        const payload = message.toString();
 
-        // Update status koneksi
-        document.getElementById('device-status').textContent = 'Online';
-        document.getElementById('device-status').classList.replace('text-danger', 'text-success');
-
-        clearTimeout(statusTimeout);
-        statusTimeout = setTimeout(() => {
-            document.getElementById('device-status').textContent = 'Offline';
-            document.getElementById('device-status').classList.replace('text-success',
-                'text-danger');
-        }, 5000);
+        if (topic === expectedTopic) {
+            const isOnline = payload.trim().toLowerCase() === 'online';
+            if (statusEl) {
+                statusEl.textContent = isOnline ? 'Online' : 'Offline';
+                statusEl.classList.toggle('text-success', isOnline);
+                statusEl.classList.toggle('text-danger', !isOnline);
+            }
+            return;
+        }
 
         try {
             const payload = JSON.parse(message.toString());
@@ -130,26 +133,21 @@ document.addEventListener("DOMContentLoaded", function() {
 
             // Update grafik
             const status = arah === 'in' ? 1 : 0;
-            dataChart.data.labels.push(waktu);
-            dataChart.data.datasets[0].data.push(status);
+            sensorChart.data.labels.push(waktu);
+            sensorChart.data.datasets[0].data.push(status);
 
-            if (dataChart.data.labels.length > 20) {
-                dataChart.data.labels.shift();
-                dataChart.data.datasets[0].data.shift();
+            if (sensorChart.data.labels.length > 20) {
+                sensorChart.data.labels.shift();
+                sensorChart.data.datasets[0].data.shift();
             }
 
-            dataChart.update();
+            sensorChart.update();
         } catch (err) {
             console.error("Gagal parsing JSON:", err);
         }
     });
 
     client.on('error', error => console.error('MQTT Error:', error));
-    client.on('close', () => {
-        console.warn('MQTT connection closed');
-        document.getElementById('device-status').textContent = 'Offline';
-        document.getElementById('device-status').classList.replace('text-success', 'text-danger');
-    });
 });
 </script>
 

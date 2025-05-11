@@ -1,64 +1,66 @@
 <?php
 
-namespace App\Console\Commands;
+    namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use PhpMqtt\Client\MqttClient;
-use PhpMqtt\Client\ConnectionSettings;
-use App\Models\MqttData;
-use Illuminate\Support\Facades\Log;
+    use Illuminate\Console\Command;
+    use PhpMqtt\Client\MqttClient;
+    use PhpMqtt\Client\ConnectionSettings;
+    // use App\Models\MqttData;
+    use App\Models\PlantsLog;
+    use Illuminate\Support\Facades\Log;
 
-class MqttSubscribeCommand extends Command
-{
-    protected $signature = 'mqtt:subscribe';
-    protected $description = 'Subscribe to MQTT topics and store messages to database';
-
-    public function handle()
+    // INI UNTUK SIMPAN DI DATABASE SAJA
+    // NA DENGAR KI, BARU NANTI NA SIMPAN KE DATABASE. JADI UNTUK STATUS TIDAK PERLU DISETTING DISINI
+    class MqttSubscribeCommand extends Command
     {
-        $server   = 'broker.emqx.io';
-        $port     = 1883;
-        $clientId = 'dashboard-iot-' . uniqid();
-        $username = null;
-        $password = null;
+        protected $signature = 'mqtt:subscribe';
+        protected $description = 'Subscribe to MQTT topics and store messages to database';
 
-        $mqtt = new MqttClient($server, $port, $clientId);
+        public function handle()
+        {
+            $server   = 'broker.emqx.io';
+            $port     = 1883;
+            $clientId = 'dashboard-iot-' . uniqid();
 
-        $connectionSettings = (new ConnectionSettings())
-            ->setUsername($username)
-            ->setPassword($password)
-            ->setKeepAliveInterval(60)
-            ->setLastWillTopic('dashboard/lastwill')
-            ->setLastWillMessage('Client disconnected unexpectedly')
-            ->setLastWillQualityOfService(0);
+            $mqtt = new MqttClient($server, $port, $clientId);
 
-        $mqtt->connect($connectionSettings, true);
+            $connectionSettings = (new ConnectionSettings())
+                ->setKeepAliveInterval(60)
+                ->setLastWillTopic('dashboard/lastwill')
+                ->setLastWillMessage('Client disconnected unexpectedly')
+                ->setLastWillQualityOfService(0);
 
-        $this->info('Terhubung ke MQTT broker!');
+            $mqtt->connect($connectionSettings, true);
 
-        // Daftar topik dan jenis perangkat
-        $topics = [
-            'iot/smartHome0oa8gdj/smartHome/access_status' => 'smarthome',
-            'iot/smartCity84jgs90/smartCity' => 'smartcity',
-        ];
+            $this->info('Terhubung ke MQTT broker!');
 
-        foreach ($topics as $pattern => $deviceType) {
-            $mqtt->subscribe($pattern, function (string $topic, string $message) use ($deviceType) {
-                // Log ke file
-                Log::info("[$deviceType] Pesan MQTT diterima: [$topic] $message");
+            $baseTopic = 'iot/zeta49kunix/+/' . '+';
 
-                // Log ke terminal
-                echo "[$deviceType] Pesan MQTT diterima: [$topic] $message\n";
+            $mqtt->subscribe($baseTopic, function (string $topic, string $message) {
+                $parts = explode('/', $topic);
+                $project = $parts[2] ?? null;
+                $deviceId = $parts[3] ?? null;
 
-                // Simpan ke database
-                MqttData::create([
-                    'topic' => $topic,
-                    'message' => $message,
-                    'device_type' => $deviceType,
-                ]);
+                Log::info("[DATA] Proyek: $project | Device: $deviceId | Payload: $message");
+
+                $data = json_decode($message, true);
+
+                if ($data) {
+                    // Simpan ke DB atau sesuaikan berdasarkan proyek
+                    switch ($project) {
+                        case 'Plants':
+                            PlantsLog::create([
+                                'device_id'  => $deviceId,
+                                'suhu'       => $data['suhu'] ?? 0,
+                                'kelembapan' => $data['kelembapan'] ?? 0,
+                                'moisture'   => $data['moisture'] ?? 0,
+                                'logged_at'  => now(),
+                            ]);
+                    }
+                }
             }, 0);
-        }
 
-        // Jalankan loop untuk terus menerima pesan
-        $mqtt->loop(true);
+            // Jalankan loop untuk terus menerima pesan
+            $mqtt->loop(true);
+        }
     }
-}

@@ -5,17 +5,42 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Device;
+// use App\Models\MqttData;
+use App\Models\PlantsLog;
+
 
 class ProjectController extends Controller
 {
-    // ROUTING BERDASARKAN TEMPLATE BLADE
+    // ROUTING BERDASARKAN TEMPLATE BLADE dan TAMPILKAN HISTORYCAL DATA
     public function detail($id)
     {
-         // Mengambil device berdasarkan ID
         $device = Device::findOrFail($id);
 
-        // Mengirimkan data device ke view
-        return view('admin.pages.project_detail', compact('device'));
+        switch ($device->tipe) {
+            case 'DoorLock':
+                // $logs = DoorLockLog::where('device_id', $device->device_id)
+                //             ->orderBy('logged_at', 'desc')
+                //             ->limit(20)
+                //             ->get();
+                // return view('admin.pages.project_detail', compact('device', 'logs'));
+                return view('admin.pages.project_detail', compact('device'));
+
+            case 'Parking':
+                // $logs = ParkingLog::where('device_id', $device->device_id)
+                //             ->orderBy('logged_at', 'desc')
+                //             ->limit(20)
+                //             ->get();
+                // return view('admin.pages.project_detail1', compact('device', 'logs'));
+                return view('admin.pages.project_detail1', compact('device'));
+
+
+            case 'Plants':
+                $logs = PlantsLog::where('device_id', $device->device_id)
+                            ->orderBy('logged_at', 'desc')
+                            ->limit(20)
+                            ->get();
+                return view('admin.pages.project_plants', compact('device', 'logs'));
+        }
     }
 
     // KE LAMAN TAMBAH PROJECT
@@ -37,7 +62,7 @@ class ProjectController extends Controller
             'tipe' => $validated['tipe']
         ]);
 
-        return view('admin.pages.project_create');
+        return redirect()->route('dashboard')->with('success', 'Project berhasil ditambahkan.');
     }
 
     // HAPUS PROJECT DI INDEX
@@ -48,4 +73,5 @@ class ProjectController extends Controller
 
         return redirect()->route('dashboard')->with('success', 'Project berhasil dihapus.');
     }
+
 }

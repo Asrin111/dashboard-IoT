@@ -35,7 +35,7 @@
                 <div class="sidebar-brand-icon rotate-n-15">
                     <i class="fas fa-laugh-wink"></i>
                 </div>
-                <div class="sidebar-brand-text mx-3">SyncIoT</div>
+                <div class="sidebar-brand-text mx-3">Aplikasi IoT</div>
             </a>
             <!-- Divider -->
             <hr class="sidebar-divider my-0">
@@ -47,14 +47,6 @@
                     <span>Dashboard</span></a>
             </li>
 
-            <!-- Divider -->
-            <hr class="sidebar-divider">
-
-            <!-- Heading -->
-            <div class="sidebar-heading">
-                Interface
-            </div>
-
             <!-- Nav Item - Pages Collapse Menu -->
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
@@ -64,8 +56,8 @@
                 </a>
                 <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
-                        <a class="collapse-item" href="{{ route('project.detail', ['id' => 1]) }}">SmartHome</a>
-                        <a class="collapse-item" href="{{ route('project.detail.city', ['id' => 2]) }}">SmartCity</a>
+                        <!-- <a class="collapse-item" href="{{ route('project.detail', ['id' => 1]) }}">SmartHome</a>
+                        <a class="collapse-item" href="{{ route('project.detail.city', ['id' => 2]) }}">SmartCity</a> -->
                     </div>
                 </div>
             </li>

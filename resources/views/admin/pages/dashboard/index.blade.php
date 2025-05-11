@@ -28,7 +28,7 @@
                         <td>{{ $apake->device_id }}</td>
                         <td>{{ $apake->created_at }}</td>
                         <td>
-                            <span id="status-{{ $apake->device_id }}" class="text-danger">Offline</span>
+                            <span id="device-status-{{ $apake->device_id }}" class="text-danger"></span>
                         </td>
                         <td>{{ $apake->tipe }}</td>
                         <td>
@@ -49,5 +49,38 @@
         </div>
     </div>
 </div>
+
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+    const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
+
+    client.on('connect', () => {
+        // Subscribe ke semua status device
+        client.subscribe('iot/zeta49kunix/status/+/+', () => {});
+    });
+
+    client.on('message', (topic, message) => {
+        const payload = message.toString();
+
+        if (topic.startsWith('iot/zeta49kunix/status/')) {
+            const parts = topic.split('/');
+            const deviceId = parts[4]; // Format: iot/zeta49kunix/status/Plants/deviceId
+
+            const isOnline = payload.trim().toLowerCase() === 'online';
+
+            const statusEl = document.getElementById(`device-status-${deviceId}`);
+            if (statusEl) {
+                statusEl.textContent = isOnline ? 'Online' : 'Offline';
+                statusEl.classList.toggle('text-success', isOnline);
+                statusEl.classList.toggle('text-danger', !isOnline);
+            }
+        }
+    });
+
+    client.on('error', error => console.error('MQTT Error:', error));
+});
+</script>
 
 @endsection
