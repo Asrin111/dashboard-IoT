@@ -26,8 +26,8 @@
     <div class="col-md-4">
         <div class="card text-white bg-success shadow mb-4 text-center">
             <div class="card-body">
-                <h5 class="card-title">Sisa Waktu Pintu Terkunci</h5>
-                <h1 id="waktu-tersisa" style="font-size: 3rem;">-</h1>
+                <h5 class="card-title">Waktu Terakhir Pintu Dibuka/Ditutup</h5>
+                <h5 id="waktu-terakhir" style="font-size: 1rem;">-</h5>
             </div>
         </div>
     </div>
@@ -82,9 +82,6 @@
         </div>
     </div>
 </div>
-
-
-
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
@@ -167,14 +164,14 @@ document.addEventListener("DOMContentLoaded", function() {
 
         try {
             const payload = JSON.parse(message.toString());
-            const waktuTersisa = payload.timeLeft;
             const statusPintu = payload.doorStatus;
-            const waktu = new Date().toLocaleTimeString();
+            const waktu = new Date().toLocaleString('id-ID');
+            const statusText = statusPintu === 'open' ? 'Terbuka' : 'Tertutup';
 
             // Update teks info
-            document.getElementById('status-pintu-text').textContent =
-                `Pintu ${statusPintu === 'open' ? 'Terbuka' : 'Tertutup'}`;
-            document.getElementById('waktu-tersisa').textContent = waktuTersisa;
+            document.getElementById('status-pintu-text').textContent = `Pintu ${statusText}`;
+            document.getElementById('waktu-terakhir').textContent = `Pintu ${statusText} pada ${waktu}`;
+
 
             // Update grafik
             const status = statusPintu === 'open' ? 1 : 0;
