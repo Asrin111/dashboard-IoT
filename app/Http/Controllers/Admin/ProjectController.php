@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Device;
 // use App\Models\MqttData;
 use App\Models\PlantsLog;
+use App\Models\DoorlockLog;
 
 
 class ProjectController extends Controller
@@ -18,12 +19,11 @@ class ProjectController extends Controller
 
         switch ($device->tipe) {
             case 'DoorLock':
-                // $logs = DoorLockLog::where('device_id', $device->device_id)
-                //             ->orderBy('logged_at', 'desc')
-                //             ->limit(20)
-                //             ->get();
-                // return view('admin.pages.project_detail', compact('device', 'logs'));
-                return view('admin.pages.project_detail', compact('device'));
+                $logs = DoorLockLog::where('device_id', $device->device_id)
+                            ->orderBy('created_at', 'desc')
+                            ->limit(20)
+                            ->get();
+                return view('admin.pages.project_detail', compact('device', 'logs'));
 
             case 'Parking':
                 // $logs = ParkingLog::where('device_id', $device->device_id)

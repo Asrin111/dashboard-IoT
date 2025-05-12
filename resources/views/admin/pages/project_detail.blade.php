@@ -44,6 +44,48 @@
     </div>
 </div>
 
+<!-- TABEL -->
+<div class="card shadow mb-4 mt-4">
+    <div class="card-header py-3">
+        <h5 class="m-0 font-weight-bold text-primary">Riwayat Akses Pintu</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>Tanggal & Waktu</th>
+                        <th>Status Akses</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($logs as $log)
+                    <tr>
+                        <td>{{ \Carbon\Carbon::parse($log->created_at)->format('d-m-Y H:i:s') }}</td>
+                        <td>
+                            @if($log->akses == 'Akses Diberikan')
+                            <span class="badge badge-success">Akses Diberikan</span>
+                            @elseif($log->akses == 'Akses Ditolak!')
+                            <span class="badge badge-danger">Akses Ditolak</span>
+                            @else
+                            <span class="badge badge-secondary">Tidak Dikenal</span>
+                            @endif
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="2" class="text-center">Belum ada data akses</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 
