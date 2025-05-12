@@ -26,7 +26,7 @@
     <div class="col-md-4">
         <div class="card text-white bg-success shadow mb-4 text-center">
             <div class="card-body">
-                <h5 class="card-title">Waktu Terakhir Pintu Dibuka/Ditutup</h5>
+                <h6 class="card-title">Waktu Terakhir Pintu Dibuka/Ditutup</h6>
                 <h5 id="waktu-terakhir" style="font-size: 1rem;">-</h5>
             </div>
         </div>
