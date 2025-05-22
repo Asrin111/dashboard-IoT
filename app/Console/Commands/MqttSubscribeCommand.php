@@ -7,6 +7,7 @@ use PhpMqtt\Client\MqttClient;
 use PhpMqtt\Client\ConnectionSettings;
 use App\Models\PlantsLog;
 use App\Models\DoorlockLog;
+use App\Models\ParkingLog;
 use Illuminate\Support\Facades\Log;
 
 class MqttSubscribeCommand extends Command
@@ -71,11 +72,18 @@ class MqttSubscribeCommand extends Command
                     Log::info("✅ Data Doorlock berhasil disimpan.");
                     $this->info("✅ Doorlock: Data disimpan.");
                     break;
-
-                default:
-                    Log::warning("⚠️ Proyek tidak dikenali: $project");
-                    $this->warn("⚠️ Proyek tidak dikenali: $project");
+                    
+                case 'parking':
+                    ParkingLog::create([
+                        'device_id' => $deviceId,
+                        'slots'     => $data['slots'],
+                        'direction'     => $data['direction']
+                    ]);
+                    Log::info("✅ Data Parking berhasil disimpan.");
+                    $this->info("✅ Parking: Data disimpan.");
                     break;
+
+                    
             }
         }, 0);
 
